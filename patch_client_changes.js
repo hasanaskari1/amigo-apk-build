@@ -9,78 +9,140 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
+import Svg, { Path, Circle, Rect } from 'react-native-svg';
 import { FontFamily } from '../../../GlobalStyles';
 import useScreenEnterAnimations, {
   useStaggeredListEnter,
 } from '../../hooks/useScreenEnterAnimations';
-import CloseIcon from '../../assets/svg/CloseIcon';
-import ShieldIcon from '../../assets/svg/ShieldIcon';
-import AlertTriangleIcon from '../../assets/svg/AlertTriangleIcon';
-import CheckIcon from '../../assets/svg/CheckIcon';
+import BackArrow from '../../assets/svg/backArrow';
 import ClockIcon from '../../assets/svg/ClockIcon';
-import FlagIcon from '../../assets/svg/FlagIcon';
+import DeleteBinIcon from '../../assets/svg/DeleteBinIcon';
 import LockIcon from '../../assets/svg/LockIcon';
 import GhostIcon from '../../assets/svg/GhostIcon';
 
-// Static, text-and-icons-only screen. No features, no side effects.
+// Two small inline icons so the stroke colour can be driven per-rule. The
+// shipped AddIcon / ShareImageIcon hard-code a purple stroke and cannot be
+// recoloured, and the design needs purple and green respectively.
+const PlusCircleIcon = ({ size = 22, color = '#9B7BFF' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Circle cx={12} cy={12} r={9.5} stroke={color} strokeWidth={1.8} />
+    <Path
+      d="M8 12h8M12 8v8"
+      stroke={color}
+      strokeWidth={1.8}
+      strokeLinecap="round"
+    />
+  </Svg>
+);
+
+const MediaIcon = ({ size = 22, color = '#22C55E' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Rect
+      x={3}
+      y={3}
+      width={18}
+      height={18}
+      rx={3}
+      stroke={color}
+      strokeWidth={1.8}
+    />
+    <Circle cx={8.5} cy={8.5} r={1.6} stroke={color} strokeWidth={1.8} />
+    <Path
+      d="M21 15.5l-4.5-4.5L6 21"
+      stroke={color}
+      strokeWidth={1.8}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </Svg>
+);
+
+const AddUserIcon = ({ size = 22, color = '#60A5FA' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Circle cx={9} cy={8} r={3.6} stroke={color} strokeWidth={1.8} />
+    <Path
+      d="M2.8 20c0-3.3 2.8-5.6 6.2-5.6 1.3 0 2.5.3 3.5.9"
+      stroke={color}
+      strokeWidth={1.8}
+      strokeLinecap="round"
+    />
+    <Path
+      d="M18 13.4v5.2M15.4 16h5.2"
+      stroke={color}
+      strokeWidth={1.8}
+      strokeLinecap="round"
+    />
+  </Svg>
+);
+
+// Static screen: text and icons only, no state and no side effects.
 const RULES = [
   {
-    Icon: ShieldIcon,
-    color: '#FF6363',
-    title: 'Zero Tolerance',
-    description:
-      'No harassment, hate speech, threats, sexual content involving minors, or illegal activity. Violations result in an immediate permanent ban.',
-  },
-  {
-    Icon: GhostIcon,
+    key: 'crowd-creation',
     color: '#9B7BFF',
-    title: 'Stay Anonymous',
-    description:
-      'Never share your real name, phone number, address, or any personal details - yours or anyone else\u2019s. Ghost Mode only works if everyone stays a ghost.',
+    title: 'Crowd Creation',
+    description: 'You can create up to 3 Crowds per day.',
+    render: (color) => <PlusCircleIcon color={color} />,
   },
   {
-    Icon: ClockIcon,
+    key: 'temporary',
     color: '#60A5FA',
     title: 'Crowds Are Temporary',
-    description:
-      'Every crowd expires. When it does, the chat and its media are gone for good. Save anything you need before the timer runs out.',
+    description: 'Every Crowd automatically expires after its set duration.',
+    render: (color) => <ClockIcon width={22} height={22} strokeColor={color} />,
   },
   {
-    Icon: LockIcon,
+    key: 'deleted',
+    color: '#FF6B6B',
+    title: 'Expired Crowds Are Deleted',
+    description:
+      'When a Crowd expires, everything inside it \u2014 including messages and media \u2014 is permanently deleted.',
+    render: (color) => (
+      <DeleteBinIcon width={22} height={22} strokeColor={color} />
+    ),
+  },
+  {
+    key: 'media',
     color: '#22C55E',
-    title: 'Respect Privacy',
+    title: 'Media Sharing',
     description:
-      'Do not screenshot, record, or repost what other people share in a crowd. What happens in a crowd stays in the crowd.',
+      'Only Crowd admins can send photos, videos, and other media files.',
+    render: (color) => <MediaIcon color={color} />,
   },
   {
-    Icon: AlertTriangleIcon,
-    color: '#F59E0B',
-    title: 'No Spam or Scams',
+    key: 'chat-lock',
+    color: '#F5A623',
+    title: 'Chat Lock',
     description:
-      'No advertising, phishing, promotional links, or attempts to move people off-platform for money.',
+      'Admins can lock the Crowd chat. When the chat is locked, only admins can send messages.',
+    render: (color) => <LockIcon width={22} height={22} strokeColor={color} />,
   },
   {
-    Icon: FlagIcon,
-    color: '#FF6363',
-    title: 'Report Anything Harmful',
+    key: 'ghost-identity',
+    color: '#9B7BFF',
+    title: 'Ghost Identity After Logout',
     description:
-      'Use the report tool on any message or crowd that breaks these rules. Reports are anonymous and reviewed by moderators.',
+      'When you log out of Ghost Mode, your Ghost identity will remain available only if you still have an active Crowd that you created or joined.',
+    description2:
+      'If you have no active Crowds, your Ghost identity will be removed.',
+    render: (color) => <GhostIcon width={22} height={22} strokeColor={color} />,
   },
   {
-    Icon: CheckIcon,
-    color: '#22C55E',
-    title: 'Be Decent',
+    key: 'new-ghost-identity',
+    color: '#60A5FA',
+    title: 'Creating a New Ghost Identity',
     description:
-      'Treat every ghost the way you would want to be treated. Anonymity is not an excuse to be cruel.',
+      'If your Ghost identity has been removed, you will need to create a new Ghost identity with a new name the next time you use Ghost Mode.',
+    render: (color) => <AddUserIcon color={color} />,
   },
 ];
 
 const GhostRulesScreen = ({ navigation }) => {
   // Client asked for an animation when the screen opens. Uses the app's own
   // enter-animation hooks (same system as Settings and Contact List) so the
-  // motion matches the rest of the app: header drops in, the hero fades and
-  // lifts, then the rule cards stagger in one after another.
-  const { headerStyle, titleStyle, sectionStyle } = useScreenEnterAnimations({
+  // motion matches the rest of the app: the hero fades and lifts, then the
+  // rule cards stagger in one after another.
+  const { headerStyle, titleStyle } = useScreenEnterAnimations({
     headerDelayMs: 0,
     titleDelayMs: 120,
     contentBaseDelayMs: 220,
@@ -93,73 +155,78 @@ const GhostRulesScreen = ({ navigation }) => {
   });
 
   return (
-    <SafeAreaView edges={['left', 'right']} style={styles.safeArea}>
+    <SafeAreaView edges={['top', 'left', 'right']} style={styles.safeArea}>
       <View style={styles.container}>
-        {/* Header */}
         <Animated.View style={[styles.header, headerStyle]}>
-          <Text style={styles.headerTitle}>Ghost Rules</Text>
           <TouchableOpacity
             onPress={() => navigation.goBack()}
-            style={styles.closeButton}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-            <CloseIcon width={24} height={24} strokeColor="#8B8CAD" />
+            style={styles.backButton}
+            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
+            <BackArrow color="#FFFFFF" />
           </TouchableOpacity>
         </Animated.View>
 
         <ScrollView
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}>
-          {/* Intro */}
-          <Animated.View style={[styles.intro, titleStyle]}>
-            <View style={styles.introIconWrapper}>
-              <LinearGradient
-                colors={['#9B7BFF', '#7B5BCF']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.introIconGradient}>
-                <GhostIcon width={32} height={32} strokeColor="#FFFFFF" />
-              </LinearGradient>
+          <Animated.View style={[styles.hero, titleStyle]}>
+            <View style={styles.heroTile}>
+              <GhostIcon width={46} height={46} strokeColor="#9B7BFF" />
             </View>
-            <Text style={styles.introTitle}>The rules of Ghost Mode</Text>
-            <Text style={styles.introSubtitle}>
-              Ghost Mode is anonymous, not lawless. These rules keep every crowd
-              safe.
+            <Text style={styles.heroSubtitle}>
+              Understand how Ghost Mode works so you can use it safely and
+              effectively.
             </Text>
           </Animated.View>
 
-          {/* Rules */}
           <View style={styles.rulesContainer}>
-            {RULES.map((rule, index) => {
-              const { Icon, color, title, description } = rule;
-              return (
-                <Animated.View
-                  key={title}
-                  style={[styles.ruleCard, ruleEnterStyles[index]]}>
+            {RULES.map((rule, index) => (
+              <Animated.View
+                key={rule.key}
+                style={[styles.ruleCard, ruleEnterStyles[index]]}>
+                <LinearGradient
+                  colors={[rule.color, \`\${rule.color}55\`]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 0, y: 1 }}
+                  style={styles.accentStripe}
+                />
+                <View style={styles.ruleInner}>
                   <View
                     style={[
-                      styles.ruleIconCircle,
-                      { backgroundColor: \`\${color}22\` },
+                      styles.ruleIconTile,
+                      { backgroundColor: \`\${rule.color}24\` },
                     ]}>
-                    <Icon width={20} height={20} color={color} strokeColor={color} />
+                    {rule.render(rule.color)}
                   </View>
                   <View style={styles.ruleContent}>
-                    <Text style={styles.ruleTitle}>
-                      {index + 1}. {title}
+                    <Text style={styles.ruleTitle}>{rule.title}</Text>
+                    <Text style={styles.ruleDescription}>
+                      {rule.description}
                     </Text>
-                    <Text style={styles.ruleDescription}>{description}</Text>
+                    {rule.description2 ? (
+                      <Text
+                        style={[
+                          styles.ruleDescription,
+                          styles.ruleDescriptionSpaced,
+                        ]}>
+                        {rule.description2}
+                      </Text>
+                    ) : null}
                   </View>
-                </Animated.View>
-              );
-            })}
+                </View>
+              </Animated.View>
+            ))}
           </View>
 
-          {/* Footer note */}
           <Animated.View
-            style={[styles.footerCard, sectionStyle({ delayMs: 260, offsetY: 24 })]}>
+            style={[
+              styles.footerCard,
+              ruleEnterStyles[RULES.length - 1],
+            ]}>
             <Text style={styles.footerText}>
-              Breaking these rules can get you removed from a crowd or banned
-              from <Text style={styles.footerHighlight}>Ghost Mode</Text>{' '}
-              permanently.
+              Ghost Mode is designed for{' '}
+              <Text style={styles.footerHighlight}>temporary, anonymous</Text>{' '}
+              communication. Stay safe and respect others.
             </Text>
           </Animated.View>
         </ScrollView>
@@ -169,97 +236,90 @@ const GhostRulesScreen = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#0A0A14' },
-  container: { flex: 1, backgroundColor: '#0A0A14' },
+  safeArea: { flex: 1, backgroundColor: '#0B0B12' },
+  container: { flex: 1, backgroundColor: '#0B0B12' },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 16,
+    paddingHorizontal: 18,
+    paddingTop: 8,
+    paddingBottom: 4,
   },
-  headerTitle: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#FFFFFF',
-    fontFamily: FontFamily.interRegular,
-  },
-  closeButton: { padding: 4 },
-  scrollContent: { paddingHorizontal: 20, paddingBottom: 40 },
-  intro: { alignItems: 'center', marginTop: 8, marginBottom: 28 },
-  introIconWrapper: { marginBottom: 16 },
-  introIconGradient: {
-    width: 64,
-    height: 64,
-    borderRadius: 20,
+  backButton: { padding: 4 },
+  scrollContent: { paddingHorizontal: 18, paddingBottom: 48 },
+  hero: { alignItems: 'center', marginTop: 12, marginBottom: 26 },
+  heroTile: {
+    width: 96,
+    height: 96,
+    borderRadius: 26,
+    backgroundColor: 'rgba(155, 123, 255, 0.13)',
     alignItems: 'center',
     justifyContent: 'center',
+    marginBottom: 18,
   },
-  introTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#FFFFFF',
-    marginBottom: 8,
+  heroSubtitle: {
+    fontSize: 15,
+    color: '#C9CDD6',
     textAlign: 'center',
+    lineHeight: 23,
+    paddingHorizontal: 14,
     fontFamily: FontFamily.interRegular,
   },
-  introSubtitle: {
-    fontSize: 14,
-    color: '#8B8CAD',
-    textAlign: 'center',
-    lineHeight: 20,
-    paddingHorizontal: 12,
-    fontFamily: FontFamily.interRegular,
-  },
-  rulesContainer: { gap: 12 },
+  rulesContainer: {},
   ruleCard: {
-    flexDirection: 'row',
-    backgroundColor: '#151521',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    backgroundColor: '#16161E',
+    borderRadius: 14,
+    marginBottom: 14,
+    overflow: 'hidden',
   },
-  ruleIconCircle: {
-    width: 40,
-    height: 40,
+  accentStripe: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 4,
+  },
+  ruleInner: { flexDirection: 'row', padding: 16, paddingLeft: 20 },
+  ruleIconTile: {
+    width: 44,
+    height: 44,
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 14,
   },
-  ruleContent: { flex: 1 },
+  ruleContent: { flex: 1, paddingTop: 2 },
   ruleTitle: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '600',
     color: '#FFFFFF',
     marginBottom: 6,
     fontFamily: FontFamily.interRegular,
   },
   ruleDescription: {
-    fontSize: 13,
-    color: '#A9C2D0',
-    lineHeight: 19,
+    fontSize: 14,
+    color: '#9AA0AE',
+    lineHeight: 21,
     fontFamily: FontFamily.interRegular,
   },
+  ruleDescriptionSpaced: { marginTop: 12 },
   footerCard: {
-    marginTop: 20,
-    backgroundColor: 'rgba(155, 123, 255, 0.1)',
+    marginTop: 8,
+    backgroundColor: '#14141C',
     borderRadius: 14,
-    padding: 16,
+    paddingVertical: 18,
+    paddingHorizontal: 20,
     borderWidth: 1,
-    borderColor: 'rgba(155, 123, 255, 0.25)',
+    borderColor: 'rgba(255,255,255,0.05)',
   },
   footerText: {
-    fontSize: 13,
-    color: '#C9C9DD',
-    lineHeight: 19,
+    fontSize: 14,
+    color: '#9AA0AE',
+    lineHeight: 22,
     textAlign: 'center',
     fontFamily: FontFamily.interRegular,
   },
-  footerHighlight: { color: '#9B7BFF', fontWeight: '700' },
+  footerHighlight: { color: '#9B7BFF', fontWeight: '600' },
 });
 
 export default GhostRulesScreen;
